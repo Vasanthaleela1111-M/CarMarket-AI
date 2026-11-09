@@ -673,6 +673,7 @@ if page == "📘 Project Introduction":
         )
 
 
+
 # ============================================================
 # PRICE PREDICTION
 # ============================================================
@@ -697,59 +698,124 @@ elif page == "💰 Price Prediction":
 
     with col1:
 
+        # 1. BRAND
+        brand_options = sorted(
+            df["brand"].dropna().unique()
+        )
+
         brand = st.selectbox(
             "Brand",
-            sorted(df["brand"].dropna().unique())
+            brand_options
+        )
+
+        # Filter by brand
+        brand_df = df[
+            df["brand"] == brand
+        ].copy()
+
+        # 2. MODEL
+        model_options = sorted(
+            brand_df["model"].dropna().unique()
         )
 
         model = st.selectbox(
             "Model",
-            sorted(
-                df[df["brand"] == brand]["model"]
-                .dropna()
-                .unique()
-            )
+            model_options
+        )
+
+        # Filter by model
+        model_df = brand_df[
+            brand_df["model"] == model
+        ].copy()
+
+        # 3. VARIANT
+        variant_options = sorted(
+            model_df["variant"].dropna().unique()
         )
 
         variant = st.selectbox(
             "Variant",
-            sorted(
-                df[
-                    (df["brand"] == brand) &
-                    (df["model"] == model)
-                ]["variant"]
-                .dropna()
-                .unique()
-            )
+            variant_options
+        )
+
+        # Filter by variant
+        variant_df = model_df[
+            model_df["variant"] == variant
+        ].copy()
+
+        # 4. FUEL TYPE
+        fuel_options = sorted(
+            variant_df["fuel_type"].dropna().unique()
         )
 
         fuel_type = st.selectbox(
             "Fuel Type",
-            sorted(df["fuel_type"].dropna().unique())
+            fuel_options
+        )
+
+        # Filter by fuel type
+        fuel_df = variant_df[
+            variant_df["fuel_type"] == fuel_type
+        ].copy()
+
+        # 5. BODY TYPE
+        body_options = sorted(
+            fuel_df["body_type"].dropna().unique()
         )
 
         body_type = st.selectbox(
             "Body Type",
-            sorted(df["body_type"].dropna().unique())
+            body_options
         )
+
+        # Filter by body type
+        body_df = fuel_df[
+            fuel_df["body_type"] == body_type
+        ].copy()
 
     with col2:
 
+        # 6. TRANSMISSION
+        transmission_options = sorted(
+            body_df["transmission"].dropna().unique()
+        )
+
         transmission = st.selectbox(
             "Transmission",
-            sorted(df["transmission"].dropna().unique())
+            transmission_options
+        )
+
+        # Filter by transmission
+        transmission_df = body_df[
+            body_df["transmission"] == transmission
+        ].copy()
+
+        # 7. CITY
+        city_options = sorted(
+            transmission_df["city"].dropna().unique()
         )
 
         city = st.selectbox(
             "City",
-            sorted(df["city"].dropna().unique())
+            city_options
+        )
+
+        # Filter by city
+        city_df = transmission_df[
+            transmission_df["city"] == city
+        ].copy()
+
+        # 8. INSURANCE VALIDITY
+        insurance_options = sorted(
+            city_df["insurance_validity"].dropna().unique()
         )
 
         insurance_validity = st.selectbox(
             "Insurance Validity",
-            sorted(df["insurance_validity"].dropna().unique())
+            insurance_options
         )
 
+        # 9. OWNER NUMBER
         owner_number = st.number_input(
             "Owner Number",
             min_value=1,
@@ -758,9 +824,10 @@ elif page == "💰 Price Prediction":
             step=1
         )
 
+        # 10. SEATS
         seats = st.number_input(
             "Seats",
-            min_value=2,
+            min_value=4,
             max_value=10,
             value=5,
             step=1
@@ -768,6 +835,7 @@ elif page == "💰 Price Prediction":
 
     with col3:
 
+        # 11. KILOMETERS DRIVEN
         km_driven = st.number_input(
             "Kilometers Driven",
             min_value=0,
@@ -776,6 +844,7 @@ elif page == "💰 Price Prediction":
             step=1_000
         )
 
+        # 12. MODEL YEAR
         model_year = st.number_input(
             "Model Year",
             min_value=int(df["model_year"].min()),
@@ -784,6 +853,7 @@ elif page == "💰 Price Prediction":
             step=1
         )
 
+        # 13. REGISTRATION YEAR
         registration_year = st.number_input(
             "Registration Year",
             min_value=int(df["registration_year"].min()),
@@ -792,6 +862,7 @@ elif page == "💰 Price Prediction":
             step=1
         )
 
+        # 14. MILEAGE
         mileage = st.number_input(
             "Mileage",
             min_value=float(df["mileage"].min()),
@@ -812,6 +883,7 @@ elif page == "💰 Price Prediction":
 
     with col1:
 
+        # ENGINE
         engine = st.number_input(
             "Engine (cc)",
             min_value=float(df["engine"].min()),
@@ -822,6 +894,7 @@ elif page == "💰 Price Prediction":
 
     with col2:
 
+        # MAX POWER
         max_power = st.number_input(
             "Max Power (bhp)",
             min_value=float(df["max_power"].min()),
@@ -832,6 +905,7 @@ elif page == "💰 Price Prediction":
 
     with col3:
 
+        # TORQUE
         torque = st.number_input(
             "Torque (Nm)",
             min_value=float(df["torque"].min()),
@@ -852,68 +926,59 @@ elif page == "💰 Price Prediction":
         use_container_width=True
     )
 
-    if predict_button:
+    # ========================================================
+    # PREDICTION PROCESS
+    # ========================================================
 
-        input_data = pd.DataFrame([{
-            "fuel_type": fuel_type,
-            "body_type": body_type,
-            "km_driven": km_driven,
-            "transmission": transmission,
-            "owner_number": owner_number,
-            "brand": brand,
-            "model": model,
-            "model_year": model_year,
-            "variant": variant,
-            "registration_year": registration_year,
-            "insurance_validity": insurance_validity,
-            "mileage": mileage,
-            "engine": engine,
-            "max_power": max_power,
-            "torque": torque,
-            "seats": seats,
-            "city": city
-        }])
+    if predict_button:
 
         try:
 
+            # CREATE INPUT DATAFRAME
+            input_data = pd.DataFrame([{
+                "fuel_type": fuel_type,
+                "body_type": body_type,
+                "km_driven": km_driven,
+                "transmission": transmission,
+                "owner_number": owner_number,
+                "brand": brand,
+                "model": model,
+                "model_year": model_year,
+                "variant": variant,
+                "registration_year": registration_year,
+                "insurance_validity": insurance_validity,
+                "mileage": mileage,
+                "engine": engine,
+                "max_power": max_power,
+                "torque": torque,
+                "seats": seats,
+                "city": city
+            }])
+
+            # GENERATE PREDICTION
             prediction = price_model.predict(input_data)[0]
 
+            # DISPLAY RESULT
             st.divider()
 
             st.subheader("🎯 Estimated Resale Price")
 
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-
-                st.metric(
-                    "Estimated Price",
-                    f"₹{prediction:.2f} Lakh"
-                )
-
-            with col2:
-
-                st.metric(
-                    "Estimated Price",
-                    f"₹{prediction * 100000:,.0f}"
-                )
-
-            with col3:
-
-                st.metric(
-                    "Model",
-                    "HistGradientBoosting"
-                )
-
-            st.success(
-                f"🚗 Estimated resale value: ₹{prediction:.2f} lakh"
+            st.metric(
+                label="Estimated Resale Price",
+                value=f"₹{prediction:,.2f} Lakh"
             )
 
+            st.caption(
+                "Prediction generated using HistGradientBoosting."
+            )
+
+            # DISPLAY INPUT DETAILS
             with st.expander("📋 View Input Details"):
 
                 st.dataframe(
                     input_data,
-                    use_container_width=True
+                    use_container_width=True,
+                    hide_index=True
                 )
 
         except Exception as e:
@@ -921,11 +986,6 @@ elif page == "💰 Price Prediction":
             st.error(
                 f"Prediction failed: {e}"
             )
-
-
-# ============================================================
-# CAR RECOMMENDATIONS
-# ============================================================
 
 # ============================================================
 # CAR RECOMMENDATIONS
